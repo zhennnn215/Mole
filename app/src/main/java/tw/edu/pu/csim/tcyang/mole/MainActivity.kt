@@ -21,20 +21,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import tw.edu.pu.csim.tcyang.mole.ui.theme.MoleViewModel
 
-class MoleViewModel : ViewModel() {
-    var counter by mutableStateOf(0L)  // 用來保存計數器的狀態
-        private set
-
-    fun incrementCounter() {
-        counter++  // 點擊時增加計數
-    }
-}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,20 +55,34 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 }
 @Composable
 fun MoleScreen(moleViewModel: MoleViewModel = viewModel()) {
+    // DP-to-pixel轉換
+    val density = LocalDensity.current
+
+    // 地鼠Dp轉Px
+    val moleSizeDp = 150.dp
+    val moleSizePx = with(density) { moleSizeDp.roundToPx() }
+
     val counter = moleViewModel.counter
-    Box (
-        modifier = Modifier.fillMaxSize(),
-        Alignment.Center
+    val stay = moleViewModel.stay
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onSizeChanged { intSize ->  // ✅ 注意拼字
+                moleViewModel.getArea(intSize, moleSizePx)
+            },
+        contentAlignment = Alignment.Center
     ) {
-        Text(counter.toString())
+        Text("打地鼠遊戲(王鐸蓁) \n 分數: $counter \n時間: $stay")
     }
+
 
     Image(
         painter = painterResource(id = R.drawable.mole),
         contentDescription = "地鼠",
         modifier = Modifier
-            .offset { IntOffset(50, 200) }
-            .size(150.dp)
+            .offset { IntOffset(moleViewModel.offsetX, moleViewModel.offsetY) }
+            .size(moleSizeDp)
             .clickable { moleViewModel.incrementCounter() }
     )
 }
